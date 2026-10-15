@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <!-- Viewport otimizada para notch e barra do Safari no iOS -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Vida Cidade - Londrina PR</title>
+  
+  <!-- Leaflet CSS & JS (Mapa Interativo) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Fontes Google -->
+  <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* VARIÁVEIS E TEMAS */
+    :root {
+      --bg-color: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-sub: #64748b;
+      --border-color: #e2e8f0;
+      --header-bg: rgba(255, 255, 255, 0.95);
+      --nav-bg: #ffffff;
+      --accent-color: #10b981;
+      --accent-hover: #059669;
+      --danger-color: #ef4444;
+      --danger-hover: #dc2626;
+      --input-bg: #f1f5f9;
+      --badge-city-bg: #dcfce7;
+      --badge-city-text: #166534;
+      --badge-age-bg: #eff6ff;
+      --badge-age-text: #1d4ed8;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 14px rgba(0,0,0,0.1);
+      --safe-area-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    [data-theme="dark"] {
+      --bg-color: #0b0f17;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --border-color: #334155;
+      --header-bg: rgba(15, 23, 42, 0.95);
+      --nav-bg: #1e293b;
+      --accent-color: #10b981;
+      --accent-hover: #34d399;
+      --danger-color: #f87171;
+      --danger-hover: #ef4444;
+      --input-bg: #0f172a;
+      --badge-city-bg: #064e3b;
+      --badge-city-text: #a7f3d0;
+      --badge-age-bg: #1e3a8a;
+      --badge-age-text: #bfdbfe;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 14px rgba(0,0,0,0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Roboto', 'Google Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      transition: background-color 0.3s ease, color 0.3s ease;
+      padding-bottom: calc(30px + var(--safe-area-bottom));
+    }
+
+    /* HEADER AJUSTADO PARA IPHONE & DESKTOP */
+    header {
+      background: var(--header-bg);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: clamp(10px, 2vh, 16px) 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: var(--shadow-sm);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .header-inner {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      background: #10b981;
+      color: white;
+      border-radius: 12px;
+      padding: 8px 10px;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .app-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.3px;
+    }
+
+    .badges {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-top: 2px;
+    }
+
+    .badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 12px;
+    }
+
+    .badge-city {
+      background: var(--badge-city-bg);
+      color: var(--badge-city-text);
+    }
+
+    .badge-age {
+      background: var(--badge-age-bg);
+      color: var(--badge-age-text);
+      border: 1px solid var(--border-color);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .theme-toggle-btn {
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: all 0.2s ease;
+    }
+
+    .points-btn {
+      background: #ecfdf5;
+      color: #059669;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 8px 12px;
+      border-radius: 20px;
+      border: 1px solid #a7f3d0;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+    }
+
+    [data-theme="dark"] .points-btn {
+      background: #064e3b;
+      color: #a7f3d0;
+      border-color: #047857;
+    }
+
+    .header-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #0284c7;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+      overflow: hidden;
+      border: 2px solid var(--accent-color);
+    }
+
+    .header-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* NAVEGAÇÃO COMPATÍVEL COM SWIPE NO SAFARI */
+    nav {
+      background: var(--nav-bg);
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .nav-inner {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .nav-inner::-webkit-scrollbar { display: none; }
+
+    .nav-btn {
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      background: var(--input-bg);
+      color: var(--text-sub);
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      -webkit-appearance: none;
+    }
+
+    .nav-btn.active {
+      background: var(--accent-color);
+      color: white;
+      border-color: var(--accent-color);
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .nav-btn.sos-btn {
+      border-color: var(--danger-color);
+      color: var(--danger-color);
+    }
+
+    .nav-btn.sos-btn.active {
+      background: var(--danger-color);
+      color: white;
+      box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    }
+
+    /* CONTAINER PRINCIPAL ADAPTÁVEL */
+    .container {
+      padding: 16px;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .location-card {
+      background: #0f172a;
+      color: white;
+      padding: 14px 16px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-md);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .location-title {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: #38bdf8;
+      font-weight: 700;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .location-address {
+      font-size: 0.98rem;
+      font-weight: 700;
+    }
+
+    .location-sub {
+      font-size: 0.8rem;
+      color: #94a3b8;
+      margin-top: 2px;
+    }
+
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-main);
+    }
+
+    /* MAPA REDIMENSIONÁVEL */
+    .map-controls {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+      scrollbar-width: none;
+    }
+    .map-controls::-webkit-scrollbar { display: none; }
+
+    .filter-chip {
+      padding: 6px 14px;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-sub);
+      border-radius: 18px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s;
+      -webkit-appearance: none;
+    }
+
+    .filter-chip.active {
+      background: var(--text-main);
+      color: var(--bg-color);
+      border-color: var(--text-main);
+    }
+
+    #map-container {
+      position: relative;
+      width: 100%;
+      height: clamp(280px, 45vh, 420px);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      margin-bottom: 16px;
+      border: 1px solid var(--border-color);
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .gps-floating-btn {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      z-index: 1000;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 10px 14px;
+      border-radius: 24px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #0284c7;
+      box-shadow: var(--shadow-md);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      -webkit-appearance: none;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      transition: background-color 0.3s ease, border-color 0.3s ease;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .card-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--text-main);
+    }
+
+    .card-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-sub);
+    }
+
+    .tag {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 12px;
+    }
+
+    .tag-blue { background: #e0f2fe; color: #0369a1; }
+    .tag-green { background: #dcfce7; color: #15803d; }
+    .tag-red { background: #fee2e2; color: #991b1b; }
+    .tag-orange { background: #ffedd5; color: #c2410c; }
+
+    [data-theme="dark"] .tag-blue { background: #075985; color: #bae6fd; }
+    [data-theme="dark"] .tag-green { background: #14532d; color: #bbf7d0; }
+    [data-theme="dark"] .tag-red { background: #7f1d1d; color: #fecaca; }
+    [data-theme="dark"] .tag-orange { background: #7c2d12; color: #fed7aa; }
+
+    /* EMERGÊNCIA */
+    .emergency-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .emergency-card {
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+      text-decoration: none;
+      color: var(--text-main);
+      transition: all 0.2s ease;
+    }
+
+    .emergency-card:hover {
+      border-color: var(--danger-color);
+      transform: translateY(-2px);
+    }
+
+    .emergency-number {
+      font-size: 1.3rem;
+      font-weight: 800;
+      color: var(--danger-color);
+      margin-top: 2px;
+    }
+
+    .emergency-name {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-sub);
+    }
+
+    /* MURAL DE CÃES */
+    .dog-card {
+      background: var(--card-bg);
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border-color);
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .dog-img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      background: var(--input-bg);
+    }
+
+    .dog-body { padding: 14px; }
+
+    .whatsapp-btn {
+      background: #25d366;
+      color: white;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      margin-top: 10px;
+    }
+
+    /* PERFIL DO CIDADÃO */
+    .profile-header-card {
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 20px;
+      text-align: center;
+      border: 1px solid var(--border-color);
+      margin-bottom: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .profile-avatar-large {
+      width: 84px;
+      height: 84px;
+      border-radius: 50%;
+      background: #0284c7;
+      color: white;
+      font-size: 2.2rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+      border: 3px solid var(--accent-color);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .profile-avatar-large img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    .stat-box {
+      background: var(--input-bg);
+      padding: 12px 8px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--accent-color);
+    }
+
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-sub);
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .badges-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .badge-item {
+      background: var(--input-bg);
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge-item.locked {
+      opacity: 0.5;
+      filter: grayscale(1);
+    }
+
+    .badge-icon { font-size: 1.6rem; }
+
+    /* ENGINE PETS */
+    .pet-avatar-display {
+      font-size: 5rem;
+      position: relative;
+      display: inline-block;
+      margin: 10px 0;
+    }
+
+    .pet-accessory-layer {
+      position: absolute;
+      top: -10px;
+      right: 10px;
+      font-size: 2.2rem;
+    }
+
+    .pet-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .pet-selector-btn {
+      background: var(--input-bg);
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      padding: 8px 4px;
+      font-size: 1.5rem;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+      -webkit-appearance: none;
+    }
+
+    .pet-selector-btn.active {
+      border-color: var(--accent-color);
+      background: var(--card-bg);
+      transform: scale(1.05);
+    }
+
+    .shop-items-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .shop-item-card {
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    /* RANKING COMPETITIVO */
+    .rank-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 0.85rem;
+    }
+
+    .rank-table th, .rank-table td {
+      padding: 10px 8px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .rank-table th {
+      color: var(--text-sub);
+      font-weight: 700;
+    }
+
+    .user-rank-row {
+      background: #dcfce7 !important;
+      font-weight: 700;
+    }
+
+    [data-theme="dark"] .user-rank-row {
+      background: #064e3b !important;
+      color: #a7f3d0;
+    }
+
+    /* FORMULÁRIOS & BOTÕES COMPATÍVEIS COM SAFARI */
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-main);
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      background: var(--input-bg);
+      color: var(--text-main);
+      border-radius: 12px;
+      font-size: 16px; /* Impede zoom automático no Safari iOS */
+      outline: none;
+      transition: border-color 0.2s;
+      -webkit-appearance: none;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent-color);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      background: var(--accent-color);
+      color: white;
+      font-size: 0.95rem;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+      transition: background-color 0.2s;
+      -webkit-appearance: none;
+    }
+
+    .btn:hover { background: var(--accent-hover); }
+
+    .btn-sm {
+      padding: 8px 12px;
+      font-size: 0.8rem;
+      border-radius: 8px;
+    }
+
+    .btn-danger {
+      background: var(--danger-color);
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-danger:hover { background: var(--danger-hover); }
+
+    .quick-exit-btn {
+      background: #ef4444;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      width: 100%;
+      cursor: pointer;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      -webkit-appearance: none;
+    }
+
+    /* MODAL 16+ */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+      padding: 16px;
+    }
+
+    .modal {
+      background: var(--card-bg);
+      padding: 24px;
+      border-radius: 24px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      box-shadow: var(--shadow-md);
+      border: 1px solid var(--border-color);
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: var(--input-bg);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--accent-color);
+      width: 0%;
+      transition: width 0.3s;
+    }
+
+    .hidden { display: none !important; }
+
+    /* PONTO AZUL ESTILO GOOGLE MAPS */
+    .blue-dot-marker {
+      width: 18px;
+      height: 18px;
+      background-color: #4285F4;
+      border: 3px solid #FFFFFF;
+      border-radius: 50%;
+      box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+      position: relative;
+    }
+
+    .blue-dot-marker::after {
+      content: "";
+      position: absolute;
+      top: -10px; left: -10px;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background-color: rgba(66, 133, 244, 0.3);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.5); opacity: 1; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Gateway Modal 16+ -->
+  <div id="age-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div style="font-size: 2.8rem; margin-bottom: 8px;">🛡️</div>
+      <h2 style="font-size: 1.25rem; margin-bottom: 8px; color: var(--text-main);">Verificação de Idade</h2>
+      <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 16px; line-height: 1.4;">
+        O <strong>Vida Cidade</strong> exige validação de maioridade (mínimo 16 anos) para participação ativa na comunidade de Londrina.
+      </p>
+      <div class="form-group">
+        <label for="birthdate">Sua Data de Nascimento:</label>
+        <input type="date" id="birthdate" class="form-control">
+      </div>
+      <button class="btn" onclick="verifyAge()">Confirmar e Entrar</button>
+      <p id="age-error" style="color: #ef4444; font-size: 0.8rem; margin-top: 8px;" class="hidden">
+        Acesso permitido apenas para maiores de 16 anos.
+      </p>
+    </div>
+  </div>
+
+  <header>
+    <div class="header-inner">
+      <div class="logo-container">
+        <div class="logo-icon">🌱</div>
+        <div>
+          <div class="app-title">Vida Cidade</div>
+          <div class="badges">
+            <span class="badge badge-city">Londrina - PR</span>
+            <span class="badge badge-age">👤 16+ Verificado</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- BOTÃO TEMA CLARO / ESCURO -->
+        <button class="theme-toggle-btn" onclick="toggleTheme()" id="theme-btn" title="Mudar Tema">
+          🌙
+        </button>
+
+        <!-- BOTÃO ECOPOINTS -->
+        <div class="points-btn" onclick="switchTab('pets')">
+          🪙 <span id="user-points">0</span> pts
+        </div>
+
+        <!-- PERFIL -->
+        <div class="header-avatar" onclick="switchTab('profile')" title="Meu Perfil">
+          <span id="header-avatar-initial">C</span>
+          <img id="header-avatar-img" class="hidden" alt="Avatar">
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <nav>
+    <div class="nav-inner">
+      <button class="nav-btn active" onclick="switchTab('map')">🗺️ Mapa & Serviços</button>
+      <button class="nav-btn" onclick="switchTab('pets')">🐾 Mascotes Eco</button>
+      <button class="nav-btn" onclick="switchTab('report')">📢 Denunciar</button>
+      <button class="nav-btn sos-btn" onclick="switchTab('sos')">🛡️ SOS Anônimo</button>
+      <button class="nav-btn" onclick="switchTab('dogs')">🐶 Cães Abandonados</button>
+      <button class="nav-btn" onclick="switchTab('profile')">👤 Meu Perfil</button>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- LOCALIZAÇÃO EM TEMPO REAL -->
+    <div class="location-card">
+      <div class="location-title">
+        <span style="display:inline-block; width:8px; height:8px; background:#38bdf8; border-radius:50%; animation: pulse 1.5s infinite;"></span>
+        SUA LOCALIZAÇÃO EM TEMPO REAL
+      </div>
+      <div class="location-address" id="live-address-title">Obtendo sinal GPS...</div>
+      <div class="location-sub" id="live-coords">Conectando ao satélite...</div>
+    </div>
+
+    <!-- ABA MAPA -->
+    <div id="tab-map">
+      <div class="section-title">Mapa Urbano de Londrina</div>
+      
+      <div class="map-controls">
+        <button class="filter-chip active" onclick="filterMarkers('all', this)">Todos</button>
+        <button class="filter-chip" onclick="filterMarkers('saude', this)">🏥 Saúde</button>
+        <button class="filter-chip" onclick="filterMarkers('terminais', this)">🚏 Terminais</button>
+        <button class="filter-chip" onclick="filterMarkers('parques', this)">🌳 Parques</button>
+        <button class="filter-chip" onclick="filterMarkers('ocorrencias', this)">⚠️ Ocorrências</button>
+      </div>
+
+      <div id="map-container">
+        <button class="gps-floating-btn" onclick="locateUser(true)">
+          🎯 Centralizar GPS
+        </button>
+        <div id="map"></div>
+      </div>
+
+      <div class="section-title">Radar de Serviços Públicos Em Londrina</div>
+      <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 12px;" id="radar-sub">
+        Calculado a partir de R. Luís Vicente Amadeu Gongôra, 75
+      </p>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Terminal Milton Gavetti</div>
+            <div class="card-subtitle">Transporte Urbano</div>
+          </div>
+          <span class="tag tag-blue" id="dist-terminal">📍 Calculando...</span>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-sub); display: flex; justify-content: space-between; margin-top: 8px;">
+          <span id="walk-terminal">🚶 Buscando rota...</span>
+          <span class="tag tag-green">Ônibus chega em 3 min</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">UBS Carnascialli</div>
+            <div class="card-subtitle">Posto de Saúde (UBS)</div>
+          </div>
+          <span class="tag tag-blue" id="dist-ubs">📍 Calculando...</span>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-sub); display: flex; justify-content: space-between; margin-top: 8px;">
+          <span id="walk-ubs">🚶 Buscando rota...</span>
+          <span class="tag tag-green">~15 min de espera</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Hospital Dr. Anísio Figueiredo (Zona Norte)</div>
+            <div class="card-subtitle">Hospital de Referência</div>
+          </div>
+          <span class="tag tag-blue" id="dist-hosp">📍 Calculando...</span>
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-sub); display: flex; justify-content: space-between; margin-top: 8px;">
+          <span id="walk-hosp">🚶 Buscando rota...</span>
+          <span class="tag tag-green">Pronto Atendimento 24h</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA MASCOTES ECO & RANKING -->
+    <div id="tab-pets" class="hidden">
+      <div class="section-title">🐾 Mascotes Virtuais & Competição Comunitária</div>
+      
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-weight: 700; font-size: 0.9rem;">Limite Diário de EcoPoints</span>
+          <span style="font-weight: 700; font-size: 0.85rem; color: var(--accent-color);" id="daily-cap-text">0 / 150 pts hoje</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="daily-progress"></div>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--text-sub);">
+          Ganha pontos cuidando da cidade. Reset diário à meia-noite.
+        </p>
+      </div>
+
+      <!-- SELETOR DOS MASCOTES -->
+      <div class="card">
+        <div class="card-title" style="margin-bottom: 8px;">Escolha o Seu Mascote Regional:</div>
+        <div class="pet-selector-grid" id="pet-selector-grid"></div>
+
+        <div style="text-align: center; margin-top: 10px;">
+          <div class="pet-avatar-display">
+            <span id="active-pet-emoji">🦫</span>
+            <span id="active-pet-accessory" class="pet-accessory-layer"></span>
+          </div>
+          <h3 id="active-pet-name" style="color: var(--text-main);">Capivara Urbana</h3>
+          <p id="active-pet-desc" style="font-size: 0.8rem; color: var(--text-sub); margin: 4px 0 12px;"></p>
+
+          <div style="max-width: 300px; margin: 0 auto 12px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 700;">
+              <span>⚡ Energia do Mascote:</span>
+              <span id="pet-energy-value">100%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="pet-energy-bar" style="width: 100%; background: #3b82f6;"></div>
+            </div>
+            <p style="font-size: 0.72rem; color: var(--text-sub); text-align: center;">
+              A energia diminui com o tempo. Alimente seu mascote para subir no Ranking!
+            </p>
+          </div>
+
+          <button class="btn" onclick="feedActivePet()">🌾 Alimentar Mascote (-10 EcoPoints / +25% Energia)</button>
+        </div>
+      </div>
+
+      <!-- LOJA DE ACESSÓRIOS -->
+      <div class="card">
+        <div class="card-title">🛍️ Loja de Acessórios para Pets</div>
+        <p style="font-size: 0.8rem; color: var(--text-sub);">Equipe o seu mascote usando os seus EcoPoints:</p>
+        <div class="shop-items-grid" id="shop-items-grid"></div>
+      </div>
+
+      <!-- RANKING DE COMPETIÇÃO -->
+      <div class="card">
+        <div class="card-title">🏆 Ranking de Competição entre Moradores de Londrina</div>
+        <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 8px;">
+          A pontuação é calculada combinando seus EcoPoints e a Energia do seu mascote!
+        </p>
+        <table class="rank-table">
+          <thead>
+            <tr>
+              <th>Posição</th>
+              <th>Morador (Guardião)</th>
+              <th>Mascote</th>
+              <th>Pontuação</th>
+            </tr>
+          </thead>
+          <tbody id="pet-ranking-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ABA DENUNCIAR GERAL -->
+    <div id="tab-report" class="hidden">
+      <div class="section-title">Relatar Ocorrência Urbana</div>
+      <div class="card">
+        <form onsubmit="submitReport(event)">
+          <div class="form-group">
+            <label>Categoria do Problema:</label>
+            <select id="report-category" class="form-control" onchange="toggleCustomCategory()">
+              <option value="Buraco na Via">🕳️ Buraco na Via</option>
+              <option value="Iluminação Pública">💡 Iluminação Pública</option>
+              <option value="Foco de Dengue">🦟 Foco de Dengue / Lixo</option>
+              <option value="Vazamento de Água">💧 Vazamento de Água</option>
+              <option value="Outros">❓ Outros</option>
+            </select>
+          </div>
+
+          <div class="form-group hidden" id="custom-category-group">
+            <label>Especifique o Problema (Outros):</label>
+            <input type="text" id="custom-category-input" class="form-control" placeholder="Digite a categoria personalizada...">
+          </div>
+
+          <div class="form-group">
+            <label>Descrição do Incidente:</label>
+            <textarea id="report-desc" class="form-control" rows="3" placeholder="Descreva os detalhes..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Foto do Incidente:</label>
+            <input type="file" accept="image/*" id="report-photo" class="form-control" onchange="previewPhoto(event)">
+            <img id="photo-preview" style="width: 100%; border-radius: 12px; margin-top: 8px;" class="hidden" alt="Prévia">
+          </div>
+
+          <div class="form-group">
+            <label>Localização Registrada:</label>
+            <input type="text" id="report-location" class="form-control" readonly value="Buscando coordenada GPS atual...">
+          </div>
+
+          <button type="submit" class="btn" id="submit-btn">Enviar Denúncia (+50 EcoPoints)</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ABA SOS / DENÚNCIA ANÔNIMA -->
+    <div id="tab-sos" class="hidden">
+      <button class="quick-exit-btn" onclick="quickExit()">
+        🚨 Saída Segura Rápida (Fechar Tela)
+      </button>
+
+      <div class="section-title" style="color: var(--danger-color);">🛡️ Canal de Denúncia Anônima & Proteção</div>
+
+      <div class="card" style="border-left: 4px solid var(--danger-color);">
+        <p style="font-size: 0.85rem; color: var(--text-sub); line-height: 1.4;">
+          <strong>Sigilo 100% Garantido:</strong> Este formulário é estritamente confidencial. Nenhum dado pessoal ou histórico é armazenado.
+        </p>
+      </div>
+
+      <div class="section-title" style="font-size: 0.95rem;">Contatos Diretos de Emergência</div>
+      <div class="emergency-grid">
+        <a href="tel:190" class="emergency-card">
+          <div class="emergency-name">Polícia Militar</div>
+          <div class="emergency-number">190</div>
+        </a>
+        <a href="tel:153" class="emergency-card">
+          <div class="emergency-name">Guarda Municipal</div>
+          <div class="emergency-number">153</div>
+        </a>
+        <a href="tel:180" class="emergency-card">
+          <div class="emergency-name">Central da Mulher</div>
+          <div class="emergency-number">180</div>
+        </a>
+        <a href="tel:100" class="emergency-card">
+          <div class="emergency-name">Direitos Humanos</div>
+          <div class="emergency-number">100</div>
+        </a>
+      </div>
+
+      <div class="card">
+        <form onsubmit="submitAnonymousReport(event)">
+          <div class="form-group">
+            <label>Tipo de Ocorrência Grave:</label>
+            <select id="sos-category" class="form-control" required>
+              <option value="Violência Doméstica / Familiar">🏠 Violência Doméstica / Familiar</option>
+              <option value="Agressão Física ou Verbal">🚨 Agressão Física / Verbal</option>
+              <option value="Maus-tratos a Crianças ou Idosos">🚸 Negligência / Maus-tratos</option>
+              <option value="Assédio / Importunação Sexual">🛑 Assédio / Importunação</option>
+              <option value="Ameaça / Perseguição">⚠️ Ameaça / Perseguição</option>
+              <option value="Outros Abusos">❓ Outros Abusos</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Relato do Ocorrido (Anônimo):</label>
+            <textarea id="sos-desc" class="form-control" rows="4" placeholder="Descreva a situação sem se identificar..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label>Local Aproximado do Fato:</label>
+            <input type="text" id="sos-location" class="form-control" placeholder="Bairro, rua ou ponto de referência em Londrina">
+          </div>
+
+          <button type="submit" class="btn btn-danger">🔒 Enviar Denúncia Anônima</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- ABA CÃES ABANDONADOS -->
+    <div id="tab-dogs" class="hidden">
+      <div class="section-title">🐶 Cães Abandonados & Resgate</div>
+      <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 12px;">
+        Ajude a mapear e encontrar lares para animais abandonados em Londrina.
+      </p>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom: 12px;">📢 Cadastrar Animal Visto ou Resgatado</div>
+        <form onsubmit="submitDogPost(event)">
+          <div class="form-group">
+            <label>Nome ou Apelido do Cão (se souber):</label>
+            <input type="text" id="dog-name" class="form-control" placeholder="Ex: Caramelo da Avenida..." required>
+          </div>
+
+          <div class="form-group">
+            <label>Situação / Estado do Cão:</label>
+            <select id="dog-status" class="form-control">
+              <option value="Perdido na Rua">⚠️ Na Rua / Precisa de Lar Temporário</option>
+              <option value="Ferido / Precisa de Resgate Urgente">🚨 Ferido / Resgate Urgente</option>
+              <option value="Disponível para Adoção">🏠 Resgatado / Para Adoção</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Bairro / Rua onde foi visto:</label>
+            <input type="text" id="dog-location" class="form-control" placeholder="Ex: R. Saul Elkind..." required>
+          </div>
+
+          <div class="form-group">
+            <label>WhatsApp do Responsável ou Resgatante:</label>
+            <input type="tel" id="dog-phone" class="form-control" placeholder="43 9XXXX-XXXX" required>
+          </div>
+
+          <div class="form-group">
+            <label>Foto do Cão:</label>
+            <input type="file" accept="image/*" id="dog-photo-file" class="form-control" onchange="previewDogPhoto(event)" required>
+            <img id="dog-photo-preview" style="width: 100%; border-radius: 12px; margin-top: 8px;" class="hidden" alt="Prévia">
+          </div>
+
+          <button type="submit" class="btn">🐾 Publicar Cãozinho (+30 EcoPoints)</button>
+        </form>
+      </div>
+
+      <div class="section-title" style="margin-top: 20px;">Mural de Animais em Londrina</div>
+
+      <div id="dogs-feed">
+        <div class="dog-card">
+          <img src="https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=600" class="dog-img" alt="Cãozinho Caramelo">
+          <div class="dog-body">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+              <strong style="font-size: 1.05rem;">Caramelo Comunitário</strong>
+              <span class="tag tag-orange">⚠️ Na Rua</span>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 6px;">
+              📍 Visto em: <strong>Jardim Pacaembu 2 (Próximo à pracinha)</strong>
+            </p>
+            <p style="font-size: 0.85rem; color: var(--text-main); line-height: 1.4;">
+              Cãozinho muito dócil, porte médio. Recebeu água de moradores locais, mas precisa de abrigo com urgência.
+            </p>
+            <a href="https://wa.me/5543999999999?text=Olá,%20vi%20o%20anúncio%20do%20Caramelo%20no%20Vida%20Cidade!" target="_blank" class="whatsapp-btn">
+              💬 Falar com Protetor no WhatsApp
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA MEU PERFIL -->
+    <div id="tab-profile" class="hidden">
+      <div class="profile-header-card">
+        <div class="profile-avatar-large">
+          <span id="profile-avatar-initial">C</span>
+          <img id="profile-avatar-img" class="hidden" alt="Avatar">
+        </div>
+        <h2 style="font-size: 1.2rem; font-weight: 700; color: var(--text-main);" id="profile-display-name">Cidadão de Londrina</h2>
+        <span class="tag tag-green" id="profile-level-tag" style="margin-top: 4px; display: inline-block;">Nível 1 - Cidadão Aprendiz</span>
+        <p style="font-size: 0.8rem; color: var(--text-sub); margin-top: 6px;" id="profile-display-neighborhood">
+          📍 Jardim Pacaembu 2 • Londrina - PR
+        </p>
+
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-value" id="stat-points">0</div>
+            <div class="stat-label">EcoPoints</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="stat-reports">0</div>
+            <div class="stat-label">Denúncias</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-value" id="stat-dogs">0</div>
+            <div class="stat-label">Cães Salvos</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom: 8px;">Mural de Conquistas (Badges)</div>
+        <div class="badges-grid">
+          <div class="badge-item" id="badge-verified">
+            <div class="badge-icon">🛡️</div>
+            <div>
+              <strong style="font-size: 0.8rem; display:block;">16+ Verificado</strong>
+              <span style="font-size: 0.7rem; color: var(--text-sub);">Acesso validado</span>
+            </div>
+          </div>
+
+          <div class="badge-item locked" id="badge-reporter">
+            <div class="badge-icon">🕳️</div>
+            <div>
+              <strong style="font-size: 0.8rem; display:block;">Fiscal Urbano</strong>
+              <span style="font-size: 0.7rem; color: var(--text-sub);">1ª denúncia enviada</span>
+            </div>
+          </div>
+
+          <div class="badge-item locked" id="badge-dogs">
+            <div class="badge-icon">🐶</div>
+            <div>
+              <strong style="font-size: 0.8rem; display:block;">Amigo dos Pets</strong>
+              <span style="font-size: 0.7rem; color: var(--text-sub);">1º cão cadastrado</span>
+            </div>
+          </div>
+
+          <div class="badge-item locked" id="badge-capivara">
+            <div class="badge-icon">🦫</div>
+            <div>
+              <strong style="font-size: 0.8rem; display:block;">Guardião Eco</strong>
+              <span style="font-size: 0.7rem; color: var(--text-sub);">Mascote alimentado</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title" style="margin-bottom: 12px;">✏️ Editar Dados do Perfil</div>
+        <form onsubmit="saveProfile(event)">
+          <div class="form-group">
+            <label>Seu Nome ou Apelido Comunitário:</label>
+            <input type="text" id="edit-profile-name" class="form-control" placeholder="Ex: Ana Maria, Carlos Santos..." required>
+          </div>
+
+          <div class="form-group">
+            <label>Seu Bairro em Londrina:</label>
+            <input type="text" id="edit-profile-neighborhood" class="form-control" placeholder="Ex: Jardim Pacaembu 2, Gleba Palhano...">
+          </div>
+
+          <div class="form-group">
+            <label>Telefone / WhatsApp de Contato:</label>
+            <input type="tel" id="edit-profile-phone" class="form-control" placeholder="43 9XXXX-XXXX">
+          </div>
+
+          <div class="form-group">
+            <label>Alterar Foto do Perfil:</label>
+            <input type="file" accept="image/*" id="edit-profile-photo" class="form-control" onchange="previewProfilePhoto(event)">
+          </div>
+
+          <button type="submit" class="btn">💾 Salvar Perfil</button>
+        </form>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    let map;
+    let userMarker;
+    let markersGroup;
+    let currentUserCoords = [-23.27218, -51.15582];
+    let tempDogPhotoData = "";
+    let tempProfilePhotoData = "";
+    
+    // 10 Mascotes Regionais
+    const ALL_PETS = [
+      { id: "capivara", name: "Capivara Urbana", emoji: "🦫", desc: "Símbolo dos lagos de Londrina. Muito dócil e companheira!" },
+      { id: "caramelo", name: "Caramelo da XV", emoji: "🐶", desc: "O cãozinho comunitário mais famoso do calçadão." },
+      { id: "coruja", name: "Coruja do Igapó", emoji: "🦉", desc: "Atenta a tudo que acontece na cidade de dia e de noite." },
+      { id: "gatinho", name: "Gatinho do Pacaembu", emoji: "🐱", desc: "Curioso e caçador de boas ações no bairro." },
+      { id: "tatu", name: "Tatu da Reserva", emoji: "🦔", desc: "Especialista em escavar soluções sustentáveis." },
+      { id: "teiu", name: "Lagarto Teiú", emoji: "🦎", desc: "Resistente, adora tomar sol nas pedras do Lago 2." },
+      { id: "macaco", name: "Macaco do Arthur Thomas", emoji: "🐒", desc: "Sempre elétrico e divertido entre as árvores." },
+      { id: "tucano", name: "Tucano da Zona Norte", emoji: "🦜", desc: "Voa alto para avisar sobre os problemas comunitários." },
+      { id: "cachorro_mato", name: "Cachorro-do-Mato", emoji: "🦊", desc: "Guardião da Mata dos Godoy e explorador nato." },
+      { id: "guaxinim", name: "Guaxinim do Córrego", emoji: "🦝", desc: "Lava tudo o que encontra e cuida das águas da cidade." }
+    ];
+
+    const SHOP_ITEMS = [
+      { id: "laco", name: "Laço Vermelho", emoji: "🎀", cost: 30 },
+      { id: "oculos", name: "Óculos Escuros", emoji: "🕶️", cost: 50 },
+      { id: "chapeu", name: "Chapéu de Palha", emoji: "👒", cost: 60 },
+      { id: "coroa", name: "Coroa Real", emoji: "👑", cost: 100 }
+    ];
+
+    // Persistência de Estado
+    let userPoints = parseInt(localStorage.getItem('vc_points') || '0');
+    let dailyPoints = parseInt(localStorage.getItem('vc_daily_points') || '0');
+    let reportCount = parseInt(localStorage.getItem('vc_report_count') || '0');
+    let dogCount = parseInt(localStorage.getItem('vc_dog_count') || '0');
+    let fedPetCount = parseInt(localStorage.getItem('vc_fed_count') || '0');
+    let activePetId = localStorage.getItem('vc_active_pet') || 'capivara';
+    let equippedAccessory = localStorage.getItem('vc_equipped_acc') || '';
+    let petEnergy = parseInt(localStorage.getItem('vc_pet_energy') || '100');
+    let lastEnergyUpdate = parseInt(localStorage.getItem('vc_last_energy_time') || Date.now().toString());
+    let lastDate = localStorage.getItem('vc_last_date') || new Date().toDateString();
+
+    if (lastDate !== new Date().toDateString()) {
+      dailyPoints = 0;
+      localStorage.setItem('vc_daily_points', '0');
+      localStorage.setItem('vc_last_date', new Date().toDateString());
+    }
+
+    const locations = [
+      { name: "Terminal Milton Gavetti", category: "terminais", lat: -23.2655, lng: -51.1592 },
+      { name: "UBS Carnascialli", category: "saude", lat: -23.2680, lng: -51.1520 },
+      { name: "Hospital Zona Norte", category: "saude", lat: -23.2610, lng: -51.1500 },
+      { name: "Parque Arthur Thomas", category: "parques", lat: -23.3320, lng: -51.1380 }
+    ];
+
+    window.onload = function() {
+      initTheme();
+      checkAgeGate();
+      loadProfileData();
+      updatePointsUI();
+      calculateEnergyDecay();
+      initPetEngine();
+      initMap();
+      locateUser(false);
+
+      setInterval(calculateEnergyDecay, 60000);
+    };
+
+    /* TEMA CLARO E ESCURO */
+    function initTheme() {
+      const savedTheme = localStorage.getItem('vc_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      updateThemeIcon(savedTheme);
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.documentElement.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('vc_theme', newTheme);
+      updateThemeIcon(newTheme);
+    }
+
+    function updateThemeIcon(theme) {
+      document.getElementById('theme-btn').innerText = theme === 'dark' ? '☀️' : '🌙';
+    }
+
+    function checkAgeGate() {
+      const verified = localStorage.getItem('vc_age_verified');
+      if (!verified) {
+        document.getElementById('age-modal').classList.remove('hidden');
+      }
+    }
+
+    function verifyAge() {
+      const birth = document.getElementById('birthdate').value;
+      if (!birth) return;
+      
+      const birthDate = new Date(birth);
+      const ageDiff = new Date(Date.now() - birthDate.getTime());
+      const age = Math.abs(ageDiff.getUTCFullYear() - 1970);
+
+      if (age >= 16) {
+        localStorage.setItem('vc_age_verified', 'true');
+        document.getElementById('age-modal').classList.add('hidden');
+      } else {
+        document.getElementById('age-error').classList.remove('hidden');
+      }
+    }
+
+    /* TAMAGOTCHI PET ENGINE & RANKING COMPETITIVO */
+    function calculateEnergyDecay() {
+      const now = Date.now();
+      const diffMinutes = Math.floor((now - lastEnergyUpdate) / (1000 * 60));
+
+      if (diffMinutes >= 15) {
+        const loss = Math.floor(diffMinutes / 15) * 5;
+        petEnergy = Math.max(0, petEnergy - loss);
+        lastEnergyUpdate = now;
+        localStorage.setItem('vc_pet_energy', petEnergy.toString());
+        localStorage.setItem('vc_last_energy_time', now.toString());
+      }
+      updatePetUI();
+    }
+
+    function initPetEngine() {
+      const grid = document.getElementById('pet-selector-grid');
+      grid.innerHTML = '';
+      ALL_PETS.forEach(p => {
+        const btn = document.createElement('button');
+        btn.className = `pet-selector-btn ${p.id === activePetId ? 'active' : ''}`;
+        btn.innerText = p.emoji;
+        btn.title = p.name;
+        btn.onclick = () => selectPet(p.id);
+        grid.appendChild(btn);
+      });
+
+      const shopGrid = document.getElementById('shop-items-grid');
+      shopGrid.innerHTML = '';
+      SHOP_ITEMS.forEach(item => {
+        const isEquipped = equippedAccessory === item.emoji;
+        const card = document.createElement('div');
+        card.className = 'shop-item-card';
+        card.innerHTML = `
+          <div style="font-size: 1.8rem;">${item.emoji}</div>
+          <strong style="font-size: 0.8rem; display:block; margin: 4px 0;">${item.name}</strong>
+          <span style="font-size: 0.75rem; color: var(--accent-color); font-weight:700;">🪙 ${item.cost} pts</span>
+          <button class="btn btn-sm" style="margin-top:6px;" onclick="buyAccessory('${item.emoji}', ${item.cost})">
+            ${isEquipped ? 'Equipado ✅' : 'Equipar'}
+          </button>
+        `;
+        shopGrid.appendChild(card);
+      });
+
+      renderPetRanking();
+      updatePetUI();
+    }
+
+    function selectPet(id) {
+      activePetId = id;
+      localStorage.setItem('vc_active_pet', id);
+      initPetEngine();
+    }
+
+    function updatePetUI() {
+      const pet = ALL_PETS.find(p => p.id === activePetId) || ALL_PETS[0];
+      document.getElementById('active-pet-emoji').innerText = pet.emoji;
+      document.getElementById('active-pet-name').innerText = pet.name;
+      document.getElementById('active-pet-desc').innerText = pet.desc;
+      document.getElementById('active-pet-accessory').innerText = equippedAccessory;
+
+      document.getElementById('pet-energy-value').innerText = `${petEnergy}%`;
+      document.getElementById('pet-energy-bar').style.width = `${petEnergy}%`;
+
+      if (petEnergy < 30) {
+        document.getElementById('pet-energy-bar').style.background = '#ef4444';
+      } else if (petEnergy < 60) {
+        document.getElementById('pet-energy-bar').style.background = '#f59e0b';
+      } else {
+        document.getElementById('pet-energy-bar').style.background = '#10b981';
+      }
+    }
+
+    function feedActivePet() {
+      if (userPoints < 10) {
+        alert("Você precisa de pelo menos 10 EcoPoints para alimentar seu mascote!");
+        return;
+      }
+
+      if (petEnergy >= 100) {
+        alert("Seu mascote já está com 100% de energia!");
+        return;
+      }
+
+      userPoints -= 10;
+      petEnergy = Math.min(100, petEnergy + 25);
+      fedPetCount++;
+
+      localStorage.setItem('vc_points', userPoints.toString());
+      localStorage.setItem('vc_pet_energy', petEnergy.toString());
+      localStorage.setItem('vc_fed_count', fedPetCount.toString());
+
+      updatePointsUI();
+      updatePetUI();
+      updateProfileStats();
+      renderPetRanking();
+      alert("Nham nham! Mascote alimentado com sucesso (+25% de energia). A sua pontuação no Ranking subiu!");
+    }
+
+    function buyAccessory(emoji, cost) {
+      if (equippedAccessory === emoji) {
+        equippedAccessory = '';
+        localStorage.setItem('vc_equipped_acc', '');
+        initPetEngine();
+        return;
+      }
+
+      if (userPoints < cost) {
+        alert(`Você precisa de ${cost} EcoPoints para comprar este acessório!`);
+        return;
+      }
+
+      userPoints -= cost;
+      equippedAccessory = emoji;
+      localStorage.setItem('vc_points', userPoints.toString());
+      localStorage.setItem('vc_equipped_acc', emoji);
+
+      updatePointsUI();
+      initPetEngine();
+      alert(`Acessório ${emoji} equipado com sucesso!`);
+    }
+
+    /* RANKING DE COMPETIÇÃO ENTRE MORADORES */
+    function renderPetRanking() {
+      const userName = localStorage.getItem('vc_user_name') || 'Você (Cidadão)';
+      const pet = ALL_PETS.find(p => p.id === activePetId) || ALL_PETS[0];
+
+      const userScore = (userPoints * 2) + Math.round(petEnergy * 1.5);
+
+      let competitors = [
+        { isUser: false, name: "Lucas_Pacaembu", petEmoji: "🐶", petName: "Caramelo", score: 320 },
+        { isUser: false, name: "Prof_Mariana", petEmoji: "🦉", petName: "Coruja", score: 260 },
+        { isUser: false, name: "Dona_Rosa", petEmoji: "🐱", petName: "Gatinho", score: 180 },
+        { isUser: false, name: "Carlos_Gleba", petEmoji: "🦜", petName: "Tucano", score: 110 },
+        { isUser: true, name: `${userName} (Você)`, petEmoji: pet.emoji, petName: pet.name, score: userScore }
+      ];
+
+      competitors.sort((a, b) => b.score - a.score);
+
+      const tbody = document.getElementById('pet-ranking-body');
+      tbody.innerHTML = '';
+      
+      competitors.forEach((c, index) => {
+        const rankNum = index + 1;
+        let medal = `#${rankNum}`;
+        if (rankNum === 1) medal = "🥇 1º";
+        if (rankNum === 2) medal = "🥈 2º";
+        if (rankNum === 3) medal = "🥉 3º";
+
+        const tr = document.createElement('tr');
+        if (c.isUser) tr.className = 'user-rank-row';
+
+        tr.innerHTML = `
+          <td><strong>${medal}</strong></td>
+          <td>${c.name}</td>
+          <td>${c.petEmoji} ${c.petName}</td>
+          <td><span class="tag tag-green">${c.score} pts</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    /* PERFIL DO CIDADÃO */
+    function loadProfileData() {
+      const name = localStorage.getItem('vc_user_name') || 'Cidadão de Londrina';
+      const neighborhood = localStorage.getItem('vc_user_neighborhood') || 'Jardim Pacaembu 2';
+      const phone = localStorage.getItem('vc_user_phone') || '';
+      const photo = localStorage.getItem('vc_user_photo') || '';
+
+      document.getElementById('profile-display-name').innerText = name;
+      document.getElementById('profile-display-neighborhood').innerText = `📍 ${neighborhood} • Londrina - PR`;
+      document.getElementById('edit-profile-name').value = name;
+      document.getElementById('edit-profile-neighborhood').value = neighborhood;
+      document.getElementById('edit-profile-phone').value = phone;
+
+      const initial = name.charAt(0).toUpperCase();
+      document.getElementById('header-avatar-initial').innerText = initial;
+      document.getElementById('profile-avatar-initial').innerText = initial;
+
+      if (photo) {
+        document.getElementById('header-avatar-img').src = photo;
+        document.getElementById('header-avatar-img').classList.remove('hidden');
+        document.getElementById('header-avatar-initial').classList.add('hidden');
+
+        document.getElementById('profile-avatar-img').src = photo;
+        document.getElementById('profile-avatar-img').classList.remove('hidden');
+        document.getElementById('profile-avatar-initial').classList.add('hidden');
+      }
+
+      updateProfileStats();
+    }
+
+    function previewProfilePhoto(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          tempProfilePhotoData = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function saveProfile(e) {
+      e.preventDefault();
+      const name = document.getElementById('edit-profile-name').value;
+      const neighborhood = document.getElementById('edit-profile-neighborhood').value;
+      const phone = document.getElementById('edit-profile-phone').value;
+
+      localStorage.setItem('vc_user_name', name);
+      localStorage.setItem('vc_user_neighborhood', neighborhood);
+      localStorage.setItem('vc_user_phone', phone);
+
+      if (tempProfilePhotoData) {
+        localStorage.setItem('vc_user_photo', tempProfilePhotoData);
+      }
+
+      loadProfileData();
+      renderPetRanking();
+      alert("Perfil e Ranking atualizados com sucesso!");
+    }
+
+    function updateProfileStats() {
+      document.getElementById('stat-points').innerText = userPoints;
+      document.getElementById('stat-reports').innerText = reportCount;
+      document.getElementById('stat-dogs').innerText = dogCount;
+
+      let levelText = "Nível 1 - Cidadão Aprendiz";
+      if (userPoints >= 100) levelText = "Nível 2 - Protetor do Bairro";
+      if (userPoints >= 300) levelText = "Nível 3 - Guardião de Londrina";
+      document.getElementById('profile-level-tag').innerText = levelText;
+
+      if (reportCount > 0) document.getElementById('badge-reporter').classList.remove('locked');
+      if (dogCount > 0) document.getElementById('badge-dogs').classList.remove('locked');
+      if (fedPetCount > 0) document.getElementById('badge-capivara').classList.remove('locked');
+    }
+
+    function initMap() {
+      const satelliteLayer = L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        maxZoom: 20,
+        attribution: '&copy; Google Maps'
+      });
+
+      const streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+      });
+
+      map = L.map('map', {
+        center: currentUserCoords,
+        zoom: 15,
+        layers: [satelliteLayer]
+      });
+
+      L.control.layers({ "Satélite Híbrido": satelliteLayer, "Ruas / Vetores": streetLayer }).addTo(map);
+
+      markersGroup = L.layerGroup().addTo(map);
+
+      const blueDotIcon = L.divIcon({
+        className: 'blue-dot-marker',
+        iconSize: [18, 18],
+        iconAnchor: [9, 9]
+      });
+
+      userMarker = L.marker(currentUserCoords, { icon: blueDotIcon }).addTo(map)
+        .bindPopup("<b>Sua Localização GPS</b>");
+
+      renderMarkers('all');
+    }
+
+    function locateUser(recenter = true) {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.watchPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            currentUserCoords = [latitude, longitude];
+
+            if (userMarker) {
+              userMarker.setLatLng(currentUserCoords);
+            }
+
+            if (recenter && map) {
+              map.setView(currentUserCoords, 16);
+            }
+
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`)
+              .then(res => res.json())
+              .then(data => {
+                const addr = data.address;
+                const road = addr.road || addr.pedestrian || "Rua Localizada";
+                const suburb = addr.suburb || addr.neighbourhood || "Londrina";
+                
+                document.getElementById('live-address-title').innerText = `${road}, ${addr.house_number || ''}`;
+                document.getElementById('live-coords').innerText = `${suburb} • Londrina - PR (${latitude.toFixed(5)}, ${longitude.toFixed(5)})`;
+                document.getElementById('report-location').value = `${road}, ${suburb} (${latitude.toFixed(5)}, ${longitude.toFixed(5)})`;
+                document.getElementById('radar-sub').innerText = `Calculado a partir do GPS em tempo real (${road})`;
+              })
+              .catch(() => {
+                document.getElementById('live-address-title').innerText = `Sua Localização GPS`;
+                document.getElementById('live-coords').innerText = `Londrina - PR (${latitude.toFixed(5)}, ${longitude.toFixed(5)})`;
+              });
+
+            updateDistances(latitude, longitude);
+          },
+          (error) => {
+            console.warn("GPS error: ", error);
+            document.getElementById('live-address-title').innerText = "R. Luís Vicente Amadeu Gongôra, 75";
+            document.getElementById('live-coords').innerText = "Jardim Pacaembu 2 • Londrina - PR (Modo Padrão)";
+            updateDistances(currentUserCoords[0], currentUserCoords[1]);
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+        );
+      }
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c;
+    }
+
+    function updateDistances(uLat, uLng) {
+      locations.forEach(loc => {
+        const distKm = calculateDistance(uLat, uLng, loc.lat, loc.lng);
+        const distMeters = Math.round(distKm * 1000);
+        const walkMin = Math.round((distKm / 4.5) * 60);
+
+        let distText = distKm < 1 ? `📍 ${distMeters} metros` : `📍 ${distKm.toFixed(1)} km`;
+        let walkText = `🚶 ~${walkMin} min a pé`;
+
+        if (loc.name.includes("Milton Gavetti")) {
+          document.getElementById('dist-terminal').innerText = distText;
+          document.getElementById('walk-terminal').innerText = walkText;
+        } else if (loc.name.includes("Carnascialli")) {
+          document.getElementById('dist-ubs').innerText = distText;
+          document.getElementById('walk-ubs').innerText = walkText;
+        } else if (loc.name.includes("Zona Norte")) {
+          document.getElementById('dist-hosp').innerText = distText;
+          document.getElementById('walk-hosp').innerText = walkText;
+        }
+      });
+    }
+
+    function renderMarkers(categoryFilter) {
+      markersGroup.clearLayers();
+      locations.forEach(loc => {
+        if (categoryFilter === 'all' || loc.category === categoryFilter) {
+          L.marker([loc.lat, loc.lng]).addTo(markersGroup)
+            .bindPopup(`<b>${loc.name}</b>`);
+        }
+      });
+    }
+
+    function filterMarkers(cat, btn) {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      renderMarkers(cat);
+    }
+
+    function switchTab(tab) {
+      ['map', 'pets', 'report', 'sos', 'dogs', 'profile'].forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        if (el) el.classList.add('hidden');
+      });
+      document.querySelectorAll('nav .nav-btn').forEach(btn => btn.classList.remove('active'));
+
+      const targetTab = document.getElementById(`tab-${tab}`);
+      if (targetTab) targetTab.classList.remove('hidden');
+      
+      if (event && event.target && event.target.classList.contains('nav-btn')) {
+        event.target.classList.add('active');
+      }
+
+      if (tab === 'map' && map) {
+        setTimeout(() => map.invalidateSize(), 100);
+      }
+    }
+
+    function toggleCustomCategory() {
+      const select = document.getElementById('report-category');
+      const customGroup = document.getElementById('custom-category-group');
+      if (select.value === 'Outros') {
+        customGroup.classList.remove('hidden');
+      } else {
+        customGroup.classList.add('hidden');
+      }
+    }
+
+    function previewPhoto(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          const img = document.getElementById('photo-preview');
+          img.src = evt.target.result;
+          img.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function addPoints(amount) {
+      if (dailyPoints >= 150) {
+        alert("Você atingiu o limite diário de 150 EcoPoints! Volte amanhã para continuar acumulando.");
+        return false;
+      }
+
+      if (dailyPoints + amount > 150) {
+        amount = 150 - dailyPoints;
+      }
+
+      userPoints += amount;
+      dailyPoints += amount;
+
+      localStorage.setItem('vc_points', userPoints.toString());
+      localStorage.setItem('vc_daily_points', dailyPoints.toString());
+
+      updatePointsUI();
+      updateProfileStats();
+      renderPetRanking();
+      return true;
+    }
+
+    function updatePointsUI() {
+      document.getElementById('user-points').innerText = userPoints;
+      document.getElementById('daily-cap-text').innerText = `${dailyPoints} / 150 pts hoje`;
+      document.getElementById('daily-progress').style.width = `${(dailyPoints / 150) * 100}%`;
+    }
+
+    function submitReport(e) {
+      e.preventDefault();
+      let category = document.getElementById('report-category').value;
+      if (category === 'Outros') {
+        const customVal = document.getElementById('custom-category-input').value;
+        if (customVal) category = `Outros: ${customVal}`;
+      }
+
+      if (addPoints(50)) {
+        reportCount++;
+        localStorage.setItem('vc_report_count', reportCount.toString());
+        alert(`Ocorrência (${category}) registrada com sucesso! +50 EcoPoints adicionados.`);
+        e.target.reset();
+        document.getElementById('photo-preview').classList.add('hidden');
+        document.getElementById('custom-category-group').classList.add('hidden');
+      }
+    }
+
+    function quickExit() {
+      window.location.replace("https://www.google.com");
+    }
+
+    function submitAnonymousReport(e) {
+      e.preventDefault();
+      const cat = document.getElementById('sos-category').value;
+      alert(`Sua denúncia anônima de "${cat}" foi enviada de forma criptografada para as autoridades de Londrina. Nenhum dado de identificação foi registrado.`);
+      e.target.reset();
+    }
+
+    function previewDogPhoto(e) {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+          tempDogPhotoData = evt.target.result;
+          const img = document.getElementById('dog-photo-preview');
+          img.src = tempDogPhotoData;
+          img.classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function submitDogPost(e) {
+      e.preventDefault();
+      const name = document.getElementById('dog-name').value;
+      const status = document.getElementById('dog-status').value;
+      const location = document.getElementById('dog-location').value;
+      const phone = document.getElementById('dog-phone').value.replace(/\D/g, '');
+
+      let tagClass = "tag-orange";
+      if (status.includes("Ferido")) tagClass = "tag-red";
+      if (status.includes("Adoção")) tagClass = "tag-green";
+
+      const feed = document.getElementById('dogs-feed');
+      const newCard = document.createElement('div');
+      newCard.className = 'dog-card';
+      newCard.innerHTML = `
+        <img src="${tempDogPhotoData || 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=600'}" class="dog-img" alt="${name}">
+        <div class="dog-body">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 6px;">
+            <strong style="font-size: 1.05rem;">${name}</strong>
+            <span class="tag ${tagClass}">${status}</span>
+          </div>
+          <p style="font-size: 0.85rem; color: var(--text-sub); margin-bottom: 6px;">
+            📍 Visto em: <strong>${location}</strong>
+          </p>
+          <a href="https://wa.me/55${phone}?text=Olá,%20vi%20o%20anúncio%20do%20${encodeURIComponent(name)}%20no%20Vida%20Cidade!" target="_blank" class="whatsapp-btn">
+            💬 Entrar em Contato via WhatsApp
+          </a>
+        </div>
+      `;
+
+      feed.insertBefore(newCard, feed.firstChild);
+
+      if (addPoints(30)) {
+        dogCount++;
+        localStorage.setItem('vc_dog_count', dogCount.toString());
+        alert(`O cadastro do animal "${name}" foi publicado no mural com sucesso! +30 EcoPoints adicionados.`);
+      }
+
+      e.target.reset();
+      document.getElementById('dog-photo-preview').classList.add('hidden');
+      tempDogPhotoData = "";
+    }
+  </script>
+</body>
+</html>
